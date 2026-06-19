@@ -1,0 +1,6 @@
+streamlit
+pandas
+huggingface_hub
+plotly
+numpy
+pyvis
