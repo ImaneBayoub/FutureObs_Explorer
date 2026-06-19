@@ -32,31 +32,54 @@ def resolve_token():
         st.write("🔴 aucun token trouvé")
     return token
 
-@st.cache_data(show_spinner="Chargement des données…")
-def load_data_hf(token):
-    fichiers = {
-        "posts":         "data_clean/posts.csv",
-    }
-    data = {}
-    for key, path_in_repo in fichiers.items():
-        st.write(f"🟡 téléchargement : {key}…")
-        local_path = hf_hub_download(
-            repo_id=HF_REPO,
-            filename=path_in_repo,
-            repo_type="dataset",
-            token=token,
-        )
-        st.write(f"🟢 téléchargé : {key} → {local_path}")
-        data[key] = pd.read_csv(local_path, low_memory=False)
-        st.write(f"🟢 chargé : {key} {pd.read_csv(local_path, low_memory=False).shape}")
-    return data
+@st.cache_data(show_spinner="Chargement acteurs…")
+def load_acteurs(token):
+    path = hf_hub_download(repo_id=HF_REPO, filename="data_clean/acteurs_anonymises.csv", repo_type="dataset", token=token)
+    return pd.read_csv(path, low_memory=False)
+
+@st.cache_data(show_spinner="Chargement activités…")
+def load_activites(token):
+    path = hf_hub_download(repo_id=HF_REPO, filename="data_clean/activites_anonymises.csv", repo_type="dataset", token=token)
+    return pd.read_csv(path, low_memory=False)
+
+@st.cache_data(show_spinner="Chargement impacts…")
+def load_impacts(token):
+    path = hf_hub_download(repo_id=HF_REPO, filename="data_clean/impacts_anonymises.csv", repo_type="dataset", token=token)
+    return pd.read_csv(path, low_memory=False)
+
+@st.cache_data(show_spinner="Chargement localisations…")
+def load_localisations(token):
+    path = hf_hub_download(repo_id=HF_REPO, filename="data_clean/localisations.csv", repo_type="dataset", token=token)
+    return pd.read_csv(path, low_memory=False)
+
+@st.cache_data(show_spinner="Chargement posts…")
+def load_posts(token):
+    path = hf_hub_download(repo_id=HF_REPO, filename="data_clean/posts.csv", repo_type="dataset", token=token)
+    return pd.read_csv(path, low_memory=False)
 
 hf_token = resolve_token()
 if hf_token is None:
     st.warning("⚠️ Aucun token HF trouvé — le dataset doit être public.")
 
-data = load_data_hf(hf_token)
-st.write("🟢 toutes les données chargées", {k: v.shape for k, v in data.items()})
+st.write("🟡 chargement acteurs…")
+acteurs = load_acteurs(hf_token)
+st.write(f"🟢 acteurs : {acteurs.shape}")
+
+st.write("🟡 chargement activités…")
+activites = load_activites(hf_token)
+st.write(f"🟢 activités : {activites.shape}")
+
+st.write("🟡 chargement impacts…")
+impacts = load_impacts(hf_token)
+st.write(f"🟢 impacts : {impacts.shape}")
+
+st.write("🟡 chargement localisations…")
+localisations = load_localisations(hf_token)
+st.write(f"🟢 localisations : {localisations.shape}")
+
+st.write("🟡 chargement posts…")
+posts = load_posts(hf_token)
+st.write(f"🟢 posts : {posts.shape}")
 
 st.title("FUTURE-Obs")
-st.dataframe(data["posts"].head(10))
+st.dataframe(posts.head(10))
