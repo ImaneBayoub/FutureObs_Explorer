@@ -35,10 +35,6 @@ def resolve_token():
 @st.cache_data(show_spinner="Chargement des données…")
 def load_data_hf(token):
     fichiers = {
-        "acteurs":       "data_clean/acteurs_anonymises.csv",
-        "activites":     "data_clean/activites_anonymises.csv",
-        "impacts":       "data_clean/impacts_anonymises.csv",
-        "localisations": "data_clean/localisations.csv",
         "posts":         "data_clean/posts.csv",
     }
     data = {}
