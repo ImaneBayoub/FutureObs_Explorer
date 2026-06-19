@@ -61,3 +61,6 @@ if hf_token is None:
 
 data = load_data_hf(hf_token)
 st.write("🟢 toutes les données chargées", {k: v.shape for k, v in data.items()})
+
+st.title("FUTURE-Obs")
+st.dataframe(data["posts"].head(10))
