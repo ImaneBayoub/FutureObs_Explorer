@@ -667,79 +667,59 @@ def tab_acteurs_agg(ctx_f: dict) -> None:
 # ── PMI (agrégé) ──────────────────────────────────────────────────────────────
 
 def tab_pmi_agg(ctx_f: dict) -> None:
-    """
-    Affiche les matrices PMI précalculées (stockées sous forme de matrices pivotées).
-    Aucun calcul à la volée — juste un px.imshow sur la matrice chargée.
-    """
     section("Associations — PMI")
 
     mode = st.radio("Contexte", ["Saison", "Façade maritime"],
                     horizontal=True, key="pmi_mode_agg")
     suffix = "saison" if mode == "Saison" else "facade"
+    ctx_col = "saison" if suffix == "saison" else "meta_facade"
 
     sub_tabs = st.tabs([
-        "🔵 Activités", "🔴 Impacts", "🟣 Acteurs", "📦 Objets",
+        "🔵 Activités", "🔴 Impacts négatifs", "🟢 Impacts positifs",
+        "🟣 Acteurs", "📦 Objets",
     ])
 
-    def _show_pmi_mat(mat_df: pd.DataFrame, index_col: str,
-                      extra_col: str | None, tab_key: str) -> None:
-        """
-        Affiche une matrice PMI précalculée.
-        Une searchbox permet de filtrer les entités affichées par nom.
-        """
-        if mat_df.empty:
+    def _show(df: pd.DataFrame, label_col: str, tab_key: str) -> None:
+        if df.empty or label_col not in df.columns or ctx_col not in df.columns:
             st.info("Pas assez de données.")
             return
-
-        # Colonnes contexte = toutes sauf index_col et extra_col
-        drop = [index_col] + ([extra_col] if extra_col else [])
-        ctx_cols = [c for c in mat_df.columns if c not in drop]
-        if not ctx_cols:
+        pmi_df = compute_pmi_agg(df, label_col, ctx_col)
+        if pmi_df.empty:
             st.info("Pas assez de données.")
             return
-
-        # Searchbox
-        search = st.text_input(
-            "🔍 Rechercher une entité",
-            placeholder="ex: surf, pêche, association…",
-            key=f"pmi_search_{tab_key}",
+        mat = pmi_df.pivot(index=label_col, columns=ctx_col, values="pmi").fillna(0)
+        top_ents = (
+            df.groupby(label_col)["n_posts"].sum()
+            .nlargest(30).index
         )
+        mat = mat[mat.index.isin(top_ents)]
+        fig = px.imshow(mat, text_auto=".2f", aspect="auto",
+                        color_continuous_scale="RdBu",
+                        color_continuous_midpoint=0, zmin=-3, zmax=3)
+        fig.update_layout(height=max(400, len(mat) * 18 + 80), margin=_MARGIN)
+        st.plotly_chart(fig, use_container_width=True, key=tab_key)
 
-        def _render_mat(df_mat: pd.DataFrame, label: str | None = None) -> None:
-            mat = df_mat.set_index(index_col)[ctx_cols]
-            if search:
-                mat = mat[mat.index.str.contains(search.lower(), case=False, na=False)]
-            if mat.empty:
-                st.caption("Aucune entité trouvée pour cette recherche.")
-                return
-            if label:
-                st.markdown(f"**{label}**")
-            fig = px.imshow(mat, text_auto=".2f", aspect="auto",
-                            color_continuous_scale="RdBu",
-                            color_continuous_midpoint=0, zmin=-3, zmax=3)
-            fig.update_layout(height=max(300, len(mat) * 18 + 80), margin=_MARGIN)
-            st.plotly_chart(fig, use_container_width=True,
-                            key=f"{tab_key}_{label or 'mat'}")
+    imp_df = ctx_f.get(f"imp_{suffix}", pd.DataFrame())
 
-        if extra_col and extra_col in mat_df.columns:
-            for val in mat_df[extra_col].dropna().unique():
-                sub = mat_df[mat_df[extra_col] == val]
-                _render_mat(sub, label=val)
-        else:
-            _render_mat(mat_df)
+    def _imp_pol(pattern: str) -> pd.DataFrame:
+        if imp_df.empty or "Type_impact" not in imp_df.columns:
+            return pd.DataFrame()
+        return imp_df[imp_df["Type_impact"].str.lower().str.contains(pattern, na=False)]
 
     with sub_tabs[0]:
-        _show_pmi_mat(ctx_f.get(f"pmi_act_{suffix}", pd.DataFrame()),
-                      "label_merged_act", None, f"pmi_act_{suffix}")
+        _show(ctx_f.get(f"act_{suffix}", pd.DataFrame()),
+              "label_merged_act", f"pmi_act_{suffix}")
     with sub_tabs[1]:
-        _show_pmi_mat(ctx_f.get(f"pmi_imp_{suffix}", pd.DataFrame()),
-                      "label_merged_imp", "Type_impact", f"pmi_imp_{suffix}")
+        _show(_imp_pol(r"n[eé]gatif"), "label_merged_imp", f"pmi_neg_{suffix}")
     with sub_tabs[2]:
-        _show_pmi_mat(ctx_f.get(f"pmi_actor_{suffix}", pd.DataFrame()),
-                      "label_merged_actor", "Type_acteur", f"pmi_actor_{suffix}")
+        _show(_imp_pol("positif"),    "label_merged_imp", f"pmi_pos_{suffix}")
     with sub_tabs[3]:
-        _show_pmi_mat(ctx_f.get(f"pmi_obj_{suffix}", pd.DataFrame()),
-                      "objet", None, f"pmi_obj_{suffix}")
+        _show(ctx_f.get(f"actor_{suffix}", pd.DataFrame()),
+              "label_merged_actor", f"pmi_actor_{suffix}")
+    with sub_tabs[4]:
+        obj_df = ctx_f.get(f"obj_{suffix}", pd.DataFrame())
+        obj_df = obj_df[obj_df["objet"] != "__all__"] if not obj_df.empty else obj_df
+        _show(obj_df, "objet", f"pmi_obj_{suffix}")
 
 
 # ── Carte (agrégé) ────────────────────────────────────────────────────────────
