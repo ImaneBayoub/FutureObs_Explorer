@@ -226,6 +226,22 @@ def tab_act_imp(
             )
             st.plotly_chart(fig, use_container_width=True)
 
+        if not imps_neu.empty and label_imp in imps_neu.columns:
+            st.markdown("**⚪ Impacts neutres**")
+            df_neu = top_n(imps_neu, label_imp, top_n_imp)
+            fig = px.bar(
+                df_neu, x="count", y="label", orientation="h",
+                color="count", color_continuous_scale=["#e8e8e8", "#9e9e9e"],
+            )
+            fig.update_layout(
+                height=max(200, len(df_neu) * 22 + 40),
+                plot_bgcolor=_BG, paper_bgcolor=_BG,
+                coloraxis_showscale=False,
+                yaxis=dict(autorange="reversed"),
+                margin=_MARGIN,
+            )
+            st.plotly_chart(fig, use_container_width=True)
+
 
 # ── Acteurs ───────────────────────────────────────────────────────────────────
 
@@ -453,3 +469,318 @@ def tab_export(ctx: dict, label: str) -> None:
         file_name=f"{label.lower().replace(' ', '_')}_export.zip",
         mime="application/zip",
     )
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Fonctions _agg : pour la page globale (fichiers agrégés n_posts)
+# Les fichiers ont déjà été filtrés par filter_agg() dans globale.py.
+# ══════════════════════════════════════════════════════════════════════════════
+
+from data.filters import compute_pmi_agg, top_n_agg
+
+
+# ── Objets (agrégé) ───────────────────────────────────────────────────────────
+
+def tab_objets_agg(ctx_f: dict) -> None:
+    section("Distribution des objets détectés")
+
+    df = ctx_f.get("obj_saison", pd.DataFrame())
+    if df.empty or "objet" not in df.columns:
+        st.info("Aucune donnée d'objets disponible.")
+        return
+
+    # Exclure le sentinel __all__
+    df = df[df["objet"] != "__all__"]
+
+    obj_counts = (
+        df.groupby("objet")["n_posts"].sum()
+        .sort_values(ascending=False)
+        .reset_index()
+        .rename(columns={"objet": "Objet", "n_posts": "Occurrences"})
+    )
+
+    df_pmi = ctx_f.get("obj_saison", pd.DataFrame())
+    df_pmi = df_pmi[df_pmi["objet"] != "__all__"] if not df_pmi.empty else df_pmi
+
+    c1, c2 = st.columns([3, 2])
+    with c1:
+        fig = px.bar(obj_counts, x="Occurrences", y="Objet", orientation="h",
+                     color="Occurrences",
+                     color_continuous_scale=["#c8ddf5", "#0d1b2a"])
+        fig.update_layout(height=max(300, len(obj_counts) * 22 + 60),
+                          plot_bgcolor=_BG, paper_bgcolor=_BG,
+                          coloraxis_showscale=False,
+                          yaxis=dict(autorange="reversed"), margin=_MARGIN)
+        st.plotly_chart(fig, use_container_width=True)
+
+    with c2:
+        if not df_pmi.empty and "saison" in df_pmi.columns:
+            st.markdown("**Objets × Saison — PMI**")
+            pmi_df = compute_pmi_agg(df_pmi, "objet", "saison")
+            if not pmi_df.empty:
+                mat = pmi_df.pivot(index="objet", columns="saison", values="pmi").fillna(0)
+                fig2 = px.imshow(mat, text_auto=".2f", aspect="auto",
+                                 color_continuous_scale="RdBu",
+                                 color_continuous_midpoint=0, zmin=-3, zmax=3)
+                fig2.update_layout(height=max(350, len(mat) * 22 + 80), margin=_MARGIN)
+                st.plotly_chart(fig2, use_container_width=True)
+
+
+# ── Activités & Impacts (agrégé) ──────────────────────────────────────────────
+
+def tab_act_imp_agg(ctx_f: dict) -> None:
+    section("Activités & Impacts")
+
+    act_df  = ctx_f.get("act_saison",  pd.DataFrame())
+    imp_df  = ctx_f.get("imp_saison",  pd.DataFrame())
+
+    # Séparation impacts par polarité
+    def _imp(pattern: str) -> pd.DataFrame:
+        if imp_df.empty or "Type_impact" not in imp_df.columns:
+            return pd.DataFrame()
+        return imp_df[imp_df["Type_impact"].str.lower().str.contains(pattern, na=False)]
+
+    imps_neg = _imp(r"n[eé]gatif")
+    imps_pos = _imp("positif")
+    imps_neu = _imp("neutre")
+
+    n_act = max(5, act_df["label_merged_act"].dropna().nunique()) if not act_df.empty and "label_merged_act" in act_df.columns else 5
+    n_imp = max(5, imp_df["label_merged_imp"].dropna().nunique()) if not imp_df.empty and "label_merged_imp" in imp_df.columns else 5
+
+    col1, col2 = st.columns(2)
+    with col1:
+        top_n_act = st.slider("Top N activités", 1, n_act, min(20, n_act), key="sl_act_agg")
+    with col2:
+        top_n_imp = st.slider("Top N impacts", 1, n_imp, min(10, n_imp), key="sl_imp_agg")
+
+    c1, c2 = st.columns(2)
+
+    with c1:
+        st.markdown("**🔵 Activités**")
+        if not act_df.empty:
+            df_top = top_n_agg(act_df, "label_merged_act", top_n_act)
+            fig = px.bar(df_top, x="count", y="label", orientation="h",
+                         color="count", color_continuous_scale=["#c8d8f5", "#4169E1"])
+            fig.update_layout(height=max(300, len(df_top) * 22 + 40),
+                              plot_bgcolor=_BG, paper_bgcolor=_BG,
+                              coloraxis_showscale=False,
+                              yaxis=dict(autorange="reversed"), margin=_MARGIN)
+            st.plotly_chart(fig, use_container_width=True)
+
+        # Camembert tonalité
+        if not imp_df.empty:
+            st.markdown("**Répartition des impacts**")
+            tone_data = [
+                {"Tonalité": "négatif", "Nb": int(imps_neg["n_posts"].sum()) if not imps_neg.empty else 0},
+                {"Tonalité": "positif", "Nb": int(imps_pos["n_posts"].sum()) if not imps_pos.empty else 0},
+                {"Tonalité": "neutre",  "Nb": int(imps_neu["n_posts"].sum()) if not imps_neu.empty else 0},
+            ]
+            tone = pd.DataFrame([t for t in tone_data if t["Nb"] > 0])
+            if not tone.empty:
+                fig2 = px.pie(tone, names="Tonalité", values="Nb", hole=0.45,
+                              color="Tonalité",
+                              color_discrete_map={"positif": "#3CB371",
+                                                  "négatif": "#DC143C",
+                                                  "neutre":  "#9e9e9e"})
+                fig2.update_layout(height=220, margin=_MARGIN)
+                st.plotly_chart(fig2, use_container_width=True)
+
+    with c2:
+        st.markdown("**🔴 Impacts négatifs**")
+        if not imps_neg.empty:
+            df_neg = top_n_agg(imps_neg, "label_merged_imp", top_n_imp)
+            fig = px.bar(df_neg, x="count", y="label", orientation="h",
+                         color="count", color_continuous_scale=["#fcd0d0", "#DC143C"])
+            fig.update_layout(height=max(250, len(df_neg) * 22 + 40),
+                              plot_bgcolor=_BG, paper_bgcolor=_BG,
+                              coloraxis_showscale=False,
+                              yaxis=dict(autorange="reversed"), margin=_MARGIN)
+            st.plotly_chart(fig, use_container_width=True)
+
+        st.markdown("**🟢 Impacts positifs**")
+        if not imps_pos.empty:
+            df_pos = top_n_agg(imps_pos, "label_merged_imp", top_n_imp)
+            fig = px.bar(df_pos, x="count", y="label", orientation="h",
+                         color="count", color_continuous_scale=["#d4f5e2", "#3CB371"])
+            fig.update_layout(height=max(250, len(df_pos) * 22 + 40),
+                              plot_bgcolor=_BG, paper_bgcolor=_BG,
+                              coloraxis_showscale=False,
+                              yaxis=dict(autorange="reversed"), margin=_MARGIN)
+            st.plotly_chart(fig, use_container_width=True)
+
+        if not imps_neu.empty:
+            st.markdown("**⚪ Impacts neutres**")
+            df_neu = top_n_agg(imps_neu, "label_merged_imp", top_n_imp)
+            fig = px.bar(df_neu, x="count", y="label", orientation="h",
+                         color="count", color_continuous_scale=["#e8e8e8", "#9e9e9e"])
+            fig.update_layout(height=max(200, len(df_neu) * 22 + 40),
+                              plot_bgcolor=_BG, paper_bgcolor=_BG,
+                              coloraxis_showscale=False,
+                              yaxis=dict(autorange="reversed"), margin=_MARGIN)
+            st.plotly_chart(fig, use_container_width=True)
+
+
+# ── Acteurs (agrégé) ──────────────────────────────────────────────────────────
+
+def tab_acteurs_agg(ctx_f: dict) -> None:
+    section("Acteurs identifiés")
+
+    actor_df = ctx_f.get("actor_saison", pd.DataFrame())
+    if actor_df.empty or "label_merged_actor" not in actor_df.columns:
+        st.info("Aucune donnée d'acteurs.")
+        return
+
+    # Séparation humain / non-humain
+    def _act(pattern: str, exclude: bool = False) -> pd.DataFrame:
+        if "Type_acteur" not in actor_df.columns:
+            return pd.DataFrame()
+        mask = actor_df["Type_acteur"].str.lower().str.contains("non", na=False)
+        return actor_df[~mask] if exclude else actor_df[mask]
+
+    actrs_hum = _act("non", exclude=True)
+    actrs_nh  = _act("non", exclude=False)
+
+    c1, c2 = st.columns([3, 2])
+
+    with c1:
+        df_top = top_n_agg(actor_df, "label_merged_actor", TOP_N)
+        hum_labels = set(
+            actrs_hum["label_merged_actor"].str.lower().dropna().unique()
+            if not actrs_hum.empty else []
+        )
+        bar_colors = [
+            _TYPE_COLORS["humain"] if lbl in hum_labels else _TYPE_COLORS["non humain"]
+            for lbl in df_top["label"]
+        ]
+        fig = go.Figure(go.Bar(x=df_top["count"], y=df_top["label"],
+                               orientation="h", marker_color=bar_colors))
+        fig.update_layout(height=520, plot_bgcolor=_BG, paper_bgcolor=_BG,
+                          showlegend=False, yaxis=dict(autorange="reversed"),
+                          margin=_MARGIN)
+        st.plotly_chart(fig, use_container_width=True)
+
+    with c2:
+        tc = pd.DataFrame([
+            {"Type": "humain",     "Nb": int(actrs_hum["n_posts"].sum()) if not actrs_hum.empty else 0},
+            {"Type": "non humain", "Nb": int(actrs_nh["n_posts"].sum())  if not actrs_nh.empty  else 0},
+        ])
+        fig2 = px.pie(tc, names="Type", values="Nb", color="Type",
+                      color_discrete_map=_TYPE_COLORS, hole=0.5,
+                      title="Humain vs non-humain")
+        fig2.update_layout(height=280, margin=dict(l=10, r=10, t=30, b=10))
+        st.plotly_chart(fig2, use_container_width=True)
+
+
+# ── PMI (agrégé) ──────────────────────────────────────────────────────────────
+
+def tab_pmi_agg(ctx_f: dict) -> None:
+    section("Associations — PMI")
+
+    mode = st.radio("Contexte", ["Saison", "Façade maritime"],
+                    horizontal=True, key="pmi_mode_agg")
+    suffix = "saison" if mode == "Saison" else "facade"
+    ctx_col = "saison" if suffix == "saison" else "meta_facade"
+
+    sub_tabs = st.tabs([
+        "🔵 Activités", "🔴 Impacts négatifs", "🟢 Impacts positifs",
+        "🟣 Acteurs", "📦 Objets",
+    ])
+
+    def _show(df: pd.DataFrame, label_col: str, tab_key: str) -> None:
+        if df.empty or label_col not in df.columns or ctx_col not in df.columns:
+            st.info("Pas assez de données.")
+            return
+        pmi_df = compute_pmi_agg(df, label_col, ctx_col)
+        if pmi_df.empty:
+            st.info("Pas assez de données.")
+            return
+        mat = pmi_df.pivot(index=label_col, columns=ctx_col, values="pmi").fillna(0)
+        top_ents = (
+            df.groupby(label_col)["n_posts"].sum()
+            .nlargest(30).index
+        )
+        mat = mat[mat.index.isin(top_ents)]
+        fig = px.imshow(mat, text_auto=".2f", aspect="auto",
+                        color_continuous_scale="RdBu",
+                        color_continuous_midpoint=0, zmin=-3, zmax=3)
+        fig.update_layout(height=max(400, len(mat) * 18 + 80), margin=_MARGIN)
+        st.plotly_chart(fig, use_container_width=True, key=tab_key)
+
+    imp_df = ctx_f.get(f"imp_{suffix}", pd.DataFrame())
+
+    def _imp_pol(pattern: str) -> pd.DataFrame:
+        if imp_df.empty or "Type_impact" not in imp_df.columns:
+            return pd.DataFrame()
+        return imp_df[imp_df["Type_impact"].str.lower().str.contains(pattern, na=False)]
+
+    with sub_tabs[0]:
+        _show(ctx_f.get(f"act_{suffix}", pd.DataFrame()),
+              "label_merged_act", f"pmi_act_{suffix}")
+    with sub_tabs[1]:
+        _show(_imp_pol(r"n[eé]gatif"), "label_merged_imp", f"pmi_neg_{suffix}")
+    with sub_tabs[2]:
+        _show(_imp_pol("positif"),    "label_merged_imp", f"pmi_pos_{suffix}")
+    with sub_tabs[3]:
+        _show(ctx_f.get(f"actor_{suffix}", pd.DataFrame()),
+              "label_merged_actor", f"pmi_actor_{suffix}")
+    with sub_tabs[4]:
+        obj_df = ctx_f.get(f"obj_{suffix}", pd.DataFrame())
+        obj_df = obj_df[obj_df["objet"] != "__all__"] if not obj_df.empty else obj_df
+        _show(obj_df, "objet", f"pmi_obj_{suffix}")
+
+
+# ── Carte (agrégé) ────────────────────────────────────────────────────────────
+
+def tab_carte_agg(
+    ctx_f: dict,
+    sel_saisons: list[str] | None = None,
+    sel_facades: list[str] | None = None,
+) -> None:
+    """
+    Choisit le fichier carte selon les filtres actifs :
+    - filtre façade actif  → carte_facade  (colonne meta_facade)
+    - filtre saison actif ou aucun filtre → carte_saison (colonne saison)
+    Si les deux sont actifs, priorité à facade (plus discriminant).
+    Le filtre objet est déjà appliqué en amont par filter_agg().
+    """
+    section("Carte des localisations")
+
+    # Choix du fichier selon filtres actifs
+    if sel_facades:
+        df = ctx_f.get("carte_facade", pd.DataFrame())
+    else:
+        df = ctx_f.get("carte_saison", pd.DataFrame())
+
+    if df.empty or "latitude" not in df.columns:
+        st.info("Aucune donnée de localisation disponible.")
+        return
+
+    # Agréger par lieu (somme n_posts, toutes saisons/facades confondues)
+    loc_extra = [c for c in ["label", "city"] if c in df.columns]
+    agg = (
+        df.groupby(["latitude", "longitude"] + loc_extra, dropna=False)["n_posts"]
+        .sum()
+        .reset_index()
+    )
+
+    max_posts    = agg["n_posts"].max()
+    agg["_size"] = 4 + 36 * (np.sqrt(agg["n_posts"]) / max(np.sqrt(max_posts), 1))
+    name_col     = "label" if "label" in agg.columns else ("city" if "city" in agg.columns else None)
+    agg["_hover"] = (
+        "<b>" + (agg[name_col].fillna("?") if name_col else "?") + "</b><br>"
+        + agg["n_posts"].astype(str) + " posts"
+    )
+
+    fig = go.Figure(go.Scattermap(
+        lat=agg["latitude"], lon=agg["longitude"], mode="markers",
+        marker=dict(size=agg["_size"], color="#4169E1", opacity=0.75),
+        text=agg["_hover"], hovertemplate="%{text}<extra></extra>",
+    ))
+    fig.update_layout(
+        map=dict(style="carto-positron",
+                 center=dict(lat=agg["latitude"].median(),
+                             lon=agg["longitude"].median()),
+                 zoom=5),
+        height=580, margin=dict(l=0, r=0, t=0, b=0), showlegend=False,
+    )
+    st.plotly_chart(fig, use_container_width=True)
+    st.caption(f"Taille ∝ √(nb posts) · {len(agg)} lieux · {int(agg['n_posts'].sum())} occurrences")
