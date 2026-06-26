@@ -79,8 +79,10 @@ def page_globale(token: str) -> None:
                          if not ctx_f["act_saison"].empty else 0,
             "Impacts":   int(ctx_f["imp_saison"]["n_posts"].sum())
                          if not ctx_f["imp_saison"].empty else 0,
-            "Acteurs":   int(ctx_f["actor_saison"]["n_posts"].sum())
-                         if not ctx_f["actor_saison"].empty else 0,
+            "Acteurs":   int(ctx_f["actor_hum_saison"]["n_posts"].sum()
+                         + ctx_f["actor_nh_saison"]["n_posts"].sum())
+                         if (not ctx_f["actor_hum_saison"].empty
+                             or not ctx_f["actor_nh_saison"].empty) else 0,
         },
     )
 

@@ -624,20 +624,19 @@ def tab_act_imp_agg(ctx_f: dict) -> None:
 def tab_acteurs_agg(ctx_f: dict) -> None:
     section("Acteurs identifiés")
 
-    actor_df = ctx_f.get("actor_saison", pd.DataFrame())
+    # Fichiers déjà séparés humain / non-humain
+    actrs_hum = ctx_f.get("actor_hum_saison", pd.DataFrame())
+    actrs_nh  = ctx_f.get("actor_nh_saison",  pd.DataFrame())
+
+    # DataFrame combiné pour le top-N global
+    actor_df = pd.concat(
+        [df for df in [actrs_hum, actrs_nh] if not df.empty],
+        ignore_index=True,
+    ) if (not actrs_hum.empty or not actrs_nh.empty) else pd.DataFrame()
+
     if actor_df.empty or "label_merged_actor" not in actor_df.columns:
         st.info("Aucune donnée d'acteurs.")
         return
-
-    # Séparation humain / non-humain
-    def _act(pattern: str, exclude: bool = False) -> pd.DataFrame:
-        if "Type_acteur" not in actor_df.columns:
-            return pd.DataFrame()
-        mask = actor_df["Type_acteur"].str.lower().str.contains("non", na=False)
-        return actor_df[~mask] if exclude else actor_df[mask]
-
-    actrs_hum = _act("non", exclude=True)
-    actrs_nh  = _act("non", exclude=False)
 
     c1, c2 = st.columns([3, 2])
 
@@ -720,8 +719,14 @@ def tab_pmi_agg(ctx_f: dict) -> None:
     with sub_tabs[2]:
         _show(_imp_pol("positif"),    "label_merged_imp", f"pmi_pos_{suffix}")
     with sub_tabs[3]:
-        _show(ctx_f.get(f"actor_{suffix}", pd.DataFrame()),
-              "label_merged_actor", f"pmi_actor_{suffix}")
+        # Combiner humain + non-humain pour la PMI acteurs
+        actor_hum = ctx_f.get(f"actor_hum_{suffix}", pd.DataFrame())
+        actor_nh  = ctx_f.get(f"actor_nh_{suffix}",  pd.DataFrame())
+        actor_combined = pd.concat(
+            [df for df in [actor_hum, actor_nh] if not df.empty],
+            ignore_index=True,
+        ) if (not actor_hum.empty or not actor_nh.empty) else pd.DataFrame()
+        _show(actor_combined, "label_merged_actor", f"pmi_actor_{suffix}")
     with sub_tabs[4]:
         obj_df = ctx_f.get(f"obj_{suffix}", pd.DataFrame())
         obj_df = obj_df[obj_df["objet"] != "__all__"] if not obj_df.empty else obj_df
