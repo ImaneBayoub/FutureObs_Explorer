@@ -94,7 +94,7 @@ def load_umap_html(filename: str, token: str | None) -> str:
 
 # ── Chargement d'une zone (parc ou global) ────────────────────────────────────
 
-@st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner=False, max_entries=2)
 def load_zone(zone_slug: str, token: str | None) -> dict[str, pd.DataFrame]:
     """
     Charge tous les fichiers d'une zone depuis HF (data_precomputed/<zone_slug>/).
