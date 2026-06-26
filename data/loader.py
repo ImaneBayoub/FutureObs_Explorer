@@ -33,18 +33,16 @@ from config import HF_REPO, PRECOMPUTED_DIR
 
 # Fichiers agrégés du global
 GLOBAL_FILES = {
-    "act_saison":          "ctx_act_x_objet_x_saison.csv",
-    "act_facade":          "ctx_act_x_objet_x_facade.csv",
-    "imp_saison":          "ctx_imp_x_objet_x_saison.csv",
-    "imp_facade":          "ctx_imp_x_objet_x_facade.csv",
-    "actor_hum_saison":    "ctx_actor_humain_x_objet_x_saison.csv",
-    "actor_hum_facade":    "ctx_actor_humain_x_objet_x_facade.csv",
-    "actor_nh_saison":     "ctx_actor_non_humain_x_objet_x_saison.csv",
-    "actor_nh_facade":     "ctx_actor_non_humain_x_objet_x_facade.csv",
-    "obj_saison":          "ctx_objet_x_saison.csv",
-    "obj_facade":          "ctx_objet_x_facade.csv",
-    "carte_saison":        "ctx_carte_x_objet_x_saison.csv",
-    "carte_facade":        "ctx_carte_x_objet_x_facade.csv",
+    "act_saison":    "ctx_act_top_x_saison.csv",
+    "act_facade":    "ctx_act_top_x_facade.csv",
+    "imp_saison":    "ctx_imp_top_x_saison.csv",
+    "imp_facade":    "ctx_imp_top_x_facade.csv",
+    "actor_saison":  "ctx_actor_top_x_saison.csv",
+    "actor_facade":  "ctx_actor_top_x_facade.csv",
+    "obj_saison":    "ctx_objet_x_saison.csv",
+    "obj_facade":    "ctx_objet_x_facade.csv",
+    "carte_saison":  "ctx_carte_x_objet_x_saison.csv",
+    "carte_facade":  "ctx_carte_x_objet_x_facade.csv",
 }
 
 # Fichiers bruts des parcs
