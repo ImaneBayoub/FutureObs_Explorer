@@ -25,20 +25,38 @@ from ui.tabs_shared import (
 
 # ── Sidebar filtres ───────────────────────────────────────────────────────────
 
-def _render_sidebar_filters(ctx: dict) -> tuple[list, list, list]:
+def _render_sidebar_filters(ctx: dict) -> tuple[str | None, str | None, str | None]:
+    """
+    Filtres globaux — un seul choix à la fois (radio + selectbox).
+    Saison et façade sont mutuellement exclusifs : choisir l'un désactive l'autre.
+    La PMI n'est pas affectée par ces filtres (matrices précalculées).
+    """
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 🔽 Filtres")
+    st.sidebar.caption("Un seul filtre actif à la fois — saison OU façade.")
 
-    sel_facades = st.sidebar.multiselect(
-        "Façade maritime", FACADES_VALIDES, default=[], key="g_facade",
-        placeholder="toutes les façades",
+    # Saison (radio — None = toutes)
+    saison_opts = ["toutes"] + list(SAISONS)
+    sel_saison_str = st.sidebar.radio(
+        "Saison", saison_opts, index=0, key="g_saison",
     )
-    sel_saisons = st.sidebar.multiselect(
-        "Saison", SAISONS, default=[], key="g_saison",
-        placeholder="toutes les saisons",
-    )
+    sel_saison = None if sel_saison_str == "toutes" else sel_saison_str
 
-    # Liste des objets disponibles depuis ctx_objet_x_saison
+    # Façade (seulement si pas de saison choisie)
+    sel_facade = None
+    if sel_saison is None:
+        facade_opts = ["toutes"] + sorted(FACADES_VALIDES)
+        sel_facade_str = st.sidebar.selectbox(
+            "Façade maritime", facade_opts, index=0, key="g_facade",
+        )
+        sel_facade = None if sel_facade_str == "toutes" else sel_facade_str
+    else:
+        st.sidebar.selectbox(
+            "Façade maritime", ["— (saison active)"], key="g_facade",
+            disabled=True,
+        )
+
+    # Objet (un seul)
     obj_avail: list[str] = []
     obj_df = ctx.get("obj_saison", pd.DataFrame())
     if not obj_df.empty and "objet" in obj_df.columns:
@@ -46,12 +64,18 @@ def _render_sidebar_filters(ctx: dict) -> tuple[list, list, list]:
             obj_df.loc[obj_df["objet"] != "__all__", "objet"]
             .dropna().unique().tolist()
         )
-    sel_objets = st.sidebar.multiselect(
-        "Objet détecté", obj_avail, default=[], key="g_objet",
-        placeholder="tous les objets",
-    ) if obj_avail else []
+    sel_objet = None
+    if obj_avail:
+        obj_opts = ["tous"] + obj_avail
+        sel_obj_str = st.sidebar.selectbox(
+            "Objet détecté", obj_opts, index=0, key="g_objet",
+        )
+        sel_objet = None if sel_obj_str == "tous" else sel_obj_str
 
-    return sel_facades, sel_saisons, sel_objets
+    st.sidebar.markdown("---")
+    st.sidebar.caption("⚠️ Les filtres n'affectent pas l'onglet PMI (matrices précalculées).")
+
+    return sel_saison, sel_facade, sel_objet
 
 
 # ── Page principale ───────────────────────────────────────────────────────────
@@ -62,25 +86,28 @@ def page_globale(token: str) -> None:
 
     stats = load_stats("global")
 
-    sel_facades, sel_saisons, sel_objets = _render_sidebar_filters(ctx)
+    sel_saison, sel_facade, sel_objet = _render_sidebar_filters(ctx)
 
     # Filtrage : filter_agg gère le sentinel __all__ automatiquement
     ctx_f = filter_agg(ctx,
-                       objets=sel_objets or None,
-                       saisons=sel_saisons or None,
-                       facades=sel_facades or None)
+                       objets=[sel_objet] if sel_objet else None,
+                       saisons=[sel_saison] if sel_saison else None,
+                       facades=[sel_facade] if sel_facade else None)
+
+    # Clé à utiliser selon le filtre actif (saison ou facade)
+    ctx_key = "facade" if sel_facade else "saison"
 
     header(
         title="Données globales",
         subtitle="FUTURE-Obs · Corpus littoral complet",
         stats={
             "Posts":     stats.get("n_posts", 0),
-            "Activités": int(ctx_f["act_saison"]["n_posts"].sum())
-                         if not ctx_f["act_saison"].empty else 0,
-            "Impacts":   int(ctx_f["imp_saison"]["n_posts"].sum())
-                         if not ctx_f["imp_saison"].empty else 0,
-            "Acteurs":   int(ctx_f["actor_saison"]["n_posts"].sum())
-                         if not ctx_f["actor_saison"].empty else 0,
+            "Activités": int(ctx_f[f"act_{ctx_key}"]["n_posts"].sum())
+                         if not ctx_f[f"act_{ctx_key}"].empty else 0,
+            "Impacts":   int(ctx_f[f"imp_{ctx_key}"]["n_posts"].sum())
+                         if not ctx_f[f"imp_{ctx_key}"].empty else 0,
+            "Acteurs":   int(ctx_f[f"actor_{ctx_key}"]["n_posts"].sum())
+                         if not ctx_f[f"actor_{ctx_key}"].empty else 0,
         },
     )
 
@@ -102,7 +129,7 @@ def page_globale(token: str) -> None:
         tab_overview_umap(umap_html, "Corpus global")
 
     with tabs[1]:
-        tab_carte_agg(ctx_f, sel_saisons=sel_saisons or None, sel_facades=sel_facades or None)
+        tab_carte_agg(ctx_f, sel_saisons=[sel_saison] if sel_saison else None, sel_facades=[sel_facade] if sel_facade else None)
 
     with tabs[2]:
         tab_objets_agg(ctx_f)

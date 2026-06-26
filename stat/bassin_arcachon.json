@@ -1,0 +1,34 @@
+{
+  "n_posts": 18322,
+  "n_activites": 33479,
+  "n_impacts_neg": 3989,
+  "n_impacts_pos": 22681,
+  "n_impacts_neutre": 794,
+  "n_acteurs_humain": 36839,
+  "n_acteurs_non_humain": 24491,
+  "n_locs": 21646,
+  "n_posts_par_saison": {
+    "été": 5899,
+    "printemps": 5194,
+    "hiver": 3737,
+    "automne": 3492
+  },
+  "n_posts_par_facade": {
+    "Sud Atlantique": 12979,
+    "Manche Est - mer du Nord": 2219,
+    "Méditerranée": 1903,
+    "Nord Atlantique - Manche Ouest": 1221
+  },
+  "facades": [
+    "Manche Est - mer du Nord",
+    "Méditerranée",
+    "Nord Atlantique - Manche Ouest",
+    "Sud Atlantique"
+  ],
+  "saisons": [
+    "printemps",
+    "été",
+    "automne",
+    "hiver"
+  ]
+}
