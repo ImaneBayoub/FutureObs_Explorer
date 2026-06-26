@@ -1,51 +1,101 @@
+"""
+FUTURE-Obs — Point d'entrée Streamlit
+=======================================
+Routing uniquement. Toute la logique est dans pages/, data/ et ui/.
+
+Usage :
+    streamlit run app.py
+"""
+
 import streamlit as st
-import pandas as pd
-import os
-import json
-from pathlib import Path
-from huggingface_hub import hf_hub_download
 
-HF_REPO = "ImaneBayoub/future_obs_test"
+from config import ZONES
+from data.loader import resolve_token
+from pages.accueil     import page_accueil
+from pages.comparaison import page_comparaison
+from pages.globale     import page_globale
+from pages.parc        import page_parc
+from ui.layout         import page_umap_fullscreen
+from ui.sidebar        import render_nav
 
-def resolve_token():
-    # 1. st.secrets (Streamlit Cloud)
-    try:
-        return st.secrets["HF_TOKEN"]
-    except Exception:
-        pass
-    # 2. JSON local (dev)
-    _config = Path("/home/imane/Documents/FutureObs_Explorer/config/API_keys.json")
-    if _config.exists():
-        try:
-            return json.loads(_config.read_text())["HF_TOKEN"]
-        except Exception:
-            pass
-    # 3. Variable d'environnement
-    return os.environ.get("HF_TOKEN")
+# ── Configuration de la page ──────────────────────────────────────────────────
 
-@st.cache_data(show_spinner="Chargement des données…")
-def load_data_hf(token):   # ← token passé en argument pour que le cache soit lié au token
-    fichiers = {
-        "acteurs":       "data_clean/acteurs_anonymises.csv",
-        "activites":     "data_clean/activites_anonymises.csv",
-        "impacts":       "data_clean/impacts_anonymises.csv",
-        "localisations": "data_clean/localisations.csv",
-        "posts":         "data_clean/posts.csv",
-    }
-    data = {}
-    for key, path_in_repo in fichiers.items():
-        local_path = hf_hub_download(
-            repo_id=HF_REPO,
-            filename=path_in_repo,
-            repo_type="dataset",
-            token=token,
-        )
-        data[key] = pd.read_csv(local_path, low_memory=False)
-    return data
+st.set_page_config(
+    page_title="FUTURE-Obs",
+    page_icon="🌊",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
 
-# ← Tout ici s'exécute dans le contexte Streamlit
-hf_token = resolve_token()
-if hf_token is None:
-    st.warning(" Aucun token HF trouvé — le dataset doit être public.")
+st.markdown("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap');
+html, body, [class*="css"] { font-family: 'IBM Plex Sans', sans-serif; }
+[data-testid="stSidebar"] { background: #0d1b2a; border-right: 1px solid #1e3a5f; }
+[data-testid="stSidebar"] * { color: #c8d8e8 !important; }
+[data-testid="stSidebar"] h1,
+[data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] h3 { color: #4fc3f7 !important; font-family: 'Syne', sans-serif !important; }
+.main { background: #f7f9fc; }
+.site-header {
+    background: linear-gradient(135deg, #0d1b2a 0%, #1a3a5c 60%, #0a4f7a 100%);
+    padding: 2rem 2.5rem 1.8rem; border-radius: 12px; margin-bottom: 1.5rem;
+}
+.site-header h1 {
+    font-family: 'Syne', sans-serif !important; font-weight: 800;
+    font-size: 2.2rem; color: #ffffff !important; margin: 0 0 0.3rem 0;
+}
+.site-header .subtitle {
+    font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem;
+    color: #4fc3f7; letter-spacing: 2px; text-transform: uppercase;
+}
+.site-header .stats-row { display: flex; gap: 2.5rem; margin-top: 1.2rem; }
+.stat-item { display: flex; flex-direction: column; }
+.stat-number { font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 700; color: #4fc3f7; line-height: 1; }
+.stat-label  { font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; color: #7aafd4; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 2px; }
+.section-title {
+    font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 700;
+    color: #0d1b2a; border-left: 4px solid #4fc3f7;
+    padding-left: 12px; margin: 1.5rem 0 1rem;
+}
+.stTabs [data-baseweb="tab-list"] { gap: 4px; background: #e8f0f7; padding: 4px; border-radius: 10px; }
+.stTabs [data-baseweb="tab"] {
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+    padding: 6px 18px; border-radius: 7px; color: #4a6080; background: transparent; border: none;
+}
+.stTabs [aria-selected="true"] { background: #0d1b2a !important; color: #4fc3f7 !important; }
+</style>
+""", unsafe_allow_html=True)
 
-data = load_data_hf(hf_token)
+
+# ── Routing ───────────────────────────────────────────────────────────────────
+
+def main() -> None:
+    # Vue plein écran UMAP : prioritaire sur tout le reste
+    if st.session_state.get("umap_fs_html"):
+        page_umap_fullscreen()
+        return
+
+    token = resolve_token()
+
+    # Sidebar : logo + bouton retour accueil (commun à toutes les pages)
+    render_nav()
+
+    page = st.session_state.get("page", "accueil")
+
+    if page == "accueil":
+        page_accueil()
+
+    elif page == "global":
+        page_globale(token)
+
+    elif page == "parc":
+        zone = st.session_state.get("zone", list(ZONES.keys())[0])
+        page_parc(zone, token)
+
+    elif page == "compare":
+        page_comparaison(token)
+
+
+if __name__ == "__main__":
+    main()

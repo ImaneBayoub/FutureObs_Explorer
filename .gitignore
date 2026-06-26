@@ -25,3 +25,6 @@ TestResults.xml
 .streamlit/secrets.toml
 venv/
 config/
+__pycache__
+
+.streamlit
