@@ -17,7 +17,8 @@ import streamlit as st
 from config import FACADES_VALIDES, SAISONS, ZONE_COLORS, ZONES
 from data.filters import compute_pmi, filter_parc, top_n
 from data.loader import load_umap_html, load_zone
-from ui.layout import header, section, show_umap
+from ui.layout import header, section
+from ui.tabs_shared import tab_overview_umap
 
 _BG = "#fafbfd"
 _MARGIN = dict(l=10, r=10, t=10, b=10)
@@ -398,16 +399,16 @@ def page_comparaison(token: str) -> None:
 
     # ── Tab 0: Overview UMAP ──────────────────────────────────────────────────
     with tabs_cmp[0]:
-        section("Espace sémantique — tous parcs")
         try:
             umap_html = load_umap_html("umap_dashboard_all_parcs.html", token)
-            show_umap(
-                umap_html, key="compare_umap",
-                caption="Projection UMAP — entités en gras = sur-représentées par parc",
-            )
         except Exception:
-            st.info("Dashboard UMAP comparatif non disponible.")
+            umap_html = ""
 
+        tab_overview_umap(
+            umap_html=umap_html,
+            label="Comparaison des parcs marins",
+            mode="multi",
+        )
     # ── Tab 1: Carte ──────────────────────────────────────────────────────────
     with tabs_cmp[1]:
         _tab_carte_compare(parcs_f)

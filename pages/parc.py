@@ -528,7 +528,20 @@ def page_parc(zone_label: str, token: str) -> None:
             umap_html = load_umap_html(umap_path, token)
         except Exception:
             pass
-        tab_overview_umap(umap_html, zone_label)
+
+        # Déduction automatique du mode
+        if parc_slug in _UMAP_PARC_PATHS:
+            mode = "multi"
+            label = "Comparaison des sites côtiers"
+        else:
+            mode = "parc"
+            label = zone_label
+
+        tab_overview_umap(
+            umap_html=umap_html,
+            label=label,
+            mode=mode,
+        )
 
     with tabs[1]:
         tab_carte(locs_df, pd.DataFrame(), acts_df, imps_all, actrs_all)

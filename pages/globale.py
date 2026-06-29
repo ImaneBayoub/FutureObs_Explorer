@@ -110,7 +110,12 @@ def page_globale(token: str) -> None:
             umap_html = load_umap_html("umap_dashboard_all.html", token)
         except Exception:
             pass
-        tab_overview_umap(umap_html, "Corpus global")
+
+        tab_overview_umap(
+            umap_html,
+            "Corpus global",
+            mode="global"
+        )
 
     with tabs[1]:
         tab_carte_agg(ctx_f, sel_saisons=sel_saisons or None, sel_facades=sel_facades or None)

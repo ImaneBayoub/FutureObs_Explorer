@@ -36,17 +36,55 @@ _TYPE_COLORS = {"humain": "#9370DB", "non humain": "#20B2AA"}
 
 # ── Vue d'ensemble (UMAP) ─────────────────────────────────────────────────────
 
-def tab_overview_umap(umap_html: str, label: str) -> None:
-    section("Espace sémantique")
+def tab_overview_umap(umap_html: str, label: str, mode: str = "parc") -> None:
+    """
+    mode:
+        - "parc"  : un parc individuel
+        - "global": corpus global
+        - "multi" : comparaison multi-sites côtiers
+    """
+
+    if mode == "global":
+        section("Structure globale des relations entre entités")
+        caption = (
+            "On construit un graphe reliant les activités, impacts et acteurs observés dans l’ensemble du corpus. "
+            "À partir de ce graphe, on calcule des embeddings (Node2Vec), puis on les projette en 2D (UMAP) "
+            "afin de visualiser la structure globale des données."
+        )
+
+    elif mode == "multi":
+        section("Comparaison des sites côtiers")
+        caption = (
+            "On construit un graphe à partir des activités, impacts et acteurs observés dans l’ensemble des sites côtiers. "
+            "Les embeddings (Node2Vec) représentent les relations entre entités dans ce corpus commun, "
+            "puis sont projetés en 2D (UMAP) afin de comparer les structures des différents sites et de mettre en évidence leurs spécificités."
+        )
+
+    else:  # mode "parc"
+        section(f"Structure des relations entre entités — {label}")
+        caption = (
+            f"On construit un graphe reliant les activités, impacts et acteurs observés dans le parc {label}. "
+            "À partir de ce graphe, on calcule des embeddings (Node2Vec), puis on les projette en 2D (UMAP) "
+            "afin de visualiser la structure spécifique du parc."
+        )
+
+    # ── AJOUT IMPORTANT : logique de surreprésentation ───────────────────────
+    caption += (
+        "\n\nLes entités mises en évidence dans la visualisation correspondent aux éléments "
+        "dont la fréquence est **plus élevée dans le corpus filtré (parc ou sous-ensemble)** "
+        "que dans le corpus global de référence. "
+        "Le score de surreprésentation est calculé comme le rapport entre la fréquence locale "
+        "et la fréquence globale ; seules les entités avec un ratio > 1 sont mises en évidence."
+    )
+
     if umap_html:
         show_umap(
             umap_html,
             key=label.replace(" ", "_"),
-            caption=f"Projection UMAP — {label}",
+            caption=caption,
         )
     else:
-        st.info("Dashboard UMAP non disponible.")
-
+        st.info(f"Visualisation UMAP non disponible pour {label}.")
 
 # ── Objets ────────────────────────────────────────────────────────────────────
 
