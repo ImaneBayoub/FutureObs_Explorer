@@ -27,10 +27,10 @@ from ui.tabs_shared import (
 
 def _render_sidebar_filters(ctx: dict) -> tuple[list, list, list]:
     st.sidebar.markdown("---")
-    st.sidebar.markdown("### 🔽 Filtres")
+    st.sidebar.markdown("### Filtres")
 
     # ── Saison OU Façade — deux colonnes, mutuellement exclusifs ─────────────
-    st.sidebar.caption("⚠️ Saison et Façade sont mutuellement exclusifs. Ces filtres ne s'appliquent pas à l'onglet PMI.")
+    st.sidebar.caption("Les filtres Saison et Façade sont mutuellement exclusifs. L'ensemble des filtres ne s'appliquent pas à l'onglet PMI.")
     col1, col2 = st.sidebar.columns(2)
     with col1:
         st.caption("**Saison**")
@@ -96,12 +96,12 @@ def page_globale(token: str) -> None:
     )
 
     tabs = st.tabs([
-        "🔵 Vue d'ensemble",
-        "🗺️ Carte",
-        "📦 Objets",
-        "⚡ Activités & Impacts",
-        "👥 Acteurs",
-        "📊 PMI",
+        "Vue d'ensemble",
+        "Carte",
+        "Objets",
+        "Activités & Impacts",
+        "Acteurs",
+        "PMI",
     ])
 
     with tabs[0]:

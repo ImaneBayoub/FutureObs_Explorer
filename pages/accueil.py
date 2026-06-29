@@ -54,7 +54,7 @@ def page_accueil() -> None:
     with c2:
         st.markdown(
             f'<div style="{btn_style}">'
-            '<div style="font-size:2rem">🏖️</div>'
+            '<div style="font-size:2rem"></div>'
             '<div style="font-family:\'Syne\',sans-serif;font-weight:700;'
             'font-size:1.1rem;margin:8px 0 4px">Explorer un parc</div>'
             '<div style="font-size:0.82rem;color:#666">'
@@ -76,7 +76,7 @@ def page_accueil() -> None:
     with c3:
         st.markdown(
             f'<div style="{btn_style}">'
-            '<div style="font-size:2rem">📊</div>'
+            '<div style="font-size:2rem"></div>'
             '<div style="font-family:\'Syne\',sans-serif;font-weight:700;'
             'font-size:1.1rem;margin:8px 0 4px">Comparer les parcs</div>'
             '<div style="font-size:0.82rem;color:#666">'

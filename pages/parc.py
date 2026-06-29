@@ -2,14 +2,14 @@
 FUTURE-Obs — Page exploration d'un parc naturel marin
 ======================================================
 Onglets :
-  🔵 UMAP        : projection sémantique
-  🗺️ Carte       : localisation des posts
-  📦 Objets      : distribution des objets détectés
-  ⚡ Activités   : top activités
-  🔴 Impacts     : impacts négatifs / positifs / neutres
-  👥 Acteurs     : acteurs humains / non-humains
-  🕸️ Graph       : export .gexf filtré par fréquence
-  ⬇️ Export CSV  : téléchargement des tables filtrées
+  UMAP        : projection sémantique
+  Carte       : localisation des posts
+  Objets      : distribution des objets détectés
+  Activités   : top activités
+  Impacts     : impacts négatifs / positifs / neutres
+  Acteurs     : acteurs humains / non-humains
+  Graph       : export .gexf filtré par fréquence
+  Export CSV  : téléchargement des tables filtrées
 """
 
 import io
@@ -42,7 +42,7 @@ _UMAP_PARC_PATHS: dict[str, str] = {
 def _render_sidebar(ctx: dict, parc_slug: str) -> dict:
     """Affiche les 7 filtres et retourne un dict des sélections."""
     st.sidebar.markdown("---")
-    st.sidebar.markdown("### 🔽 Filtres")
+    st.sidebar.markdown("### Filtres")
 
     acts_all = ctx.get("activites", pd.DataFrame())
     imps_all = pd.concat(
@@ -198,7 +198,7 @@ def _tab_impacts(ctx_f: dict) -> None:
 
     c1, c2 = st.columns(2)
     with c1:
-        st.markdown("**🔴 Négatifs**")
+        st.markdown("**Négatifs**")
         if not imp_neg.empty:
             df_top = top_n(imp_neg, "label_merged_imp", top_n_val)
             fig = px.bar(df_top, x="count", y="label", orientation="h",
@@ -209,7 +209,7 @@ def _tab_impacts(ctx_f: dict) -> None:
                               yaxis=dict(autorange="reversed"), margin=_MARGIN)
             st.plotly_chart(fig, use_container_width=True)
     with c2:
-        st.markdown("**🟢 Positifs**")
+        st.markdown("**Positifs**")
         if not imp_pos.empty:
             df_top = top_n(imp_pos, "label_merged_imp", top_n_val)
             fig = px.bar(df_top, x="count", y="label", orientation="h",
@@ -382,14 +382,14 @@ def _tab_graph(ctx_f: dict) -> None:
             margin=dict(l=0, r=0, t=10, b=0),
         )
         st.plotly_chart(fig, use_container_width=True)
-        st.caption("🔵 Activités · 🔴 Impacts · 🟣 Acteurs — taille ∝ fréquence")
+        st.caption("Activités · Impacts · Acteurs — taille ∝ fréquence")
 
     # Export GEXF
     buf = io.BytesIO()
     nx.write_gexf(G, buf)
     buf.seek(0)
     st.download_button(
-        "⬇️ Télécharger le graphe (.gexf)",
+        "Télécharger le graphe (.gexf)",
         data=buf.getvalue(),
         file_name="graph_futureobs.gexf",
         mime="application/gexf+xml",
@@ -508,14 +508,14 @@ def page_parc(zone_label: str, token: str) -> None:
     )
 
     tabs = st.tabs([
-        "🔵 UMAP",
-        "🗺️ Carte",
-        "📦 Objets",
-        "⚡ Activités",
-        "🔴 Impacts",
-        "👥 Acteurs",
-        "🕸️ Graph",
-        "⬇️ Export CSV",
+        "UMAP",
+        "Carte",
+        "Objets",
+        "Activités",
+        "Impacts",
+        "Acteurs",
+        "Graph",
+        "Export CSV",
     ])
 
     with tabs[0]:
