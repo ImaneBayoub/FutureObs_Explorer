@@ -156,7 +156,7 @@ def tab_act_imp(
 
     # ── Colonne gauche : activités + camembert ────────────────────────────────
     with c1:
-        st.markdown("**🔵 Activités**")
+        st.markdown("**Activités**")
         if not acts.empty and label_act in acts.columns:
             df_top = top_n(acts, label_act, top_n_act)
             fig = px.bar(
@@ -194,7 +194,7 @@ def tab_act_imp(
 
     # ── Colonne droite : impacts neg + pos ────────────────────────────────────
     with c2:
-        st.markdown("**🔴 Impacts négatifs**")
+        st.markdown("**Impacts négatifs**")
         if not imps_neg.empty and label_imp in imps_neg.columns:
             df_neg = top_n(imps_neg, label_imp, top_n_imp)
             fig = px.bar(
@@ -226,21 +226,7 @@ def tab_act_imp(
             )
             st.plotly_chart(fig, use_container_width=True)
 
-        if not imps_neu.empty and label_imp in imps_neu.columns:
-            st.markdown("**⚪ Impacts neutres**")
-            df_neu = top_n(imps_neu, label_imp, top_n_imp)
-            fig = px.bar(
-                df_neu, x="count", y="label", orientation="h",
-                color="count", color_continuous_scale=["#e8e8e8", "#9e9e9e"],
-            )
-            fig.update_layout(
-                height=max(200, len(df_neu) * 22 + 40),
-                plot_bgcolor=_BG, paper_bgcolor=_BG,
-                coloraxis_showscale=False,
-                yaxis=dict(autorange="reversed"),
-                margin=_MARGIN,
-            )
-            st.plotly_chart(fig, use_container_width=True)
+
 
 
 # ── Acteurs ───────────────────────────────────────────────────────────────────
@@ -327,11 +313,11 @@ def tab_pmi(
     ctx_col = "saison" if mode == "Saison" else "meta_facade"
 
     sub_tabs = st.tabs([
-        "🔵 Activités",
-        "🔴 Impacts négatifs",
-        "🟢 Impacts positifs",
-        "🟣 Acteurs",
-        "📦 Objets",
+        "Activités",
+        "Impacts négatifs",
+        "Impacts positifs",
+        "Acteurs",
+        "Objets",
     ])
 
     def _show_pmi(df: pd.DataFrame, lcol: str, tab_key: str) -> None:
@@ -537,7 +523,7 @@ def tab_act_imp_agg(ctx_f: dict) -> None:
     c1, c2 = st.columns(2)
 
     with c1:
-        st.markdown("**🔵 Activités**")
+        st.markdown("**Activités**")
         if not act_df.empty:
             df_top = top_n_agg(act_df, "label_merged_act", top_n_act)
             fig = px.bar(df_top, x="count", y="label", orientation="h",
@@ -566,7 +552,7 @@ def tab_act_imp_agg(ctx_f: dict) -> None:
                 st.plotly_chart(fig2, use_container_width=True)
 
     with c2:
-        st.markdown("**🔴 Impacts négatifs**")
+        st.markdown("**Impacts négatifs**")
         if not imps_neg.empty:
             df_neg = top_n_agg(imps_neg, "label_merged_imp", top_n_imp)
             fig = px.bar(df_neg, x="count", y="label", orientation="h",
@@ -577,7 +563,7 @@ def tab_act_imp_agg(ctx_f: dict) -> None:
                               yaxis=dict(autorange="reversed"), margin=_MARGIN)
             st.plotly_chart(fig, use_container_width=True)
 
-        st.markdown("**🟢 Impacts positifs**")
+        st.markdown("**Impacts positifs**")
         if not imps_pos.empty:
             df_pos = top_n_agg(imps_pos, "label_merged_imp", top_n_imp)
             fig = px.bar(df_pos, x="count", y="label", orientation="h",
