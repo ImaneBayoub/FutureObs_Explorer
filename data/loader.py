@@ -5,20 +5,8 @@ FUTURE-Obs — Chargement des données
   - _hf_csv()        : téléchargement d'un CSV depuis HF
   - load_umap_html() : chargement d'un dashboard UMAP (local puis HF)
   - load_zone()      : chargement d'une zone parc (fichiers bruts allégés)
-  - load_global()    : chargement de la zone global (fichiers agrégés)
+  - load_global()    : chargement de la zone global (fichiers agrégés + PMI)
   - load_stats()     : lecture du stats.json local (Git)
-
-Structure HF :
-  data_precomputed/global/
-    ctx_act_x_objet_x_saison.csv, ctx_act_x_objet_x_facade.csv
-    ctx_imp_x_objet_x_saison.csv, ctx_imp_x_objet_x_facade.csv
-    ctx_actor_x_objet_x_saison.csv, ctx_actor_x_objet_x_facade.csv
-    ctx_objet_x_saison.csv, ctx_objet_x_facade.csv
-    ctx_carte_x_objet_x_saison.csv, ctx_carte_x_objet_x_facade.csv
-
-  data_precomputed/<parc>/
-    activites.csv, impacts_neg.csv, impacts_pos.csv, impacts_neutre.csv,
-    acteurs_humain.csv, acteurs_non_humain.csv, localisations.csv, ctx_objets.csv
 """
 
 import json
@@ -33,16 +21,28 @@ from config import HF_REPO, PRECOMPUTED_DIR
 
 # Fichiers agrégés du global
 GLOBAL_FILES = {
-    "act_saison":    "ctx_act_top_x_saison.csv",
-    "act_facade":    "ctx_act_top_x_facade.csv",
-    "imp_saison":    "ctx_imp_top_x_saison.csv",
-    "imp_facade":    "ctx_imp_top_x_facade.csv",
-    "actor_saison":  "ctx_actor_top_x_saison.csv",
-    "actor_facade":  "ctx_actor_top_x_facade.csv",
-    "obj_saison":    "ctx_objet_x_saison.csv",
-    "obj_facade":    "ctx_objet_x_facade.csv",
-    "carte_saison":  "ctx_carte_x_objet_x_saison.csv",
-    "carte_facade":  "ctx_carte_x_objet_x_facade.csv",
+    # Top 50 par (objet × saison/facade) — classements
+    "act_saison":       "ctx_act_top_x_saison.csv",
+    "act_facade":       "ctx_act_top_x_facade.csv",
+    "imp_saison":       "ctx_imp_top_x_saison.csv",
+    "imp_facade":       "ctx_imp_top_x_facade.csv",
+    "actor_saison":     "ctx_actor_top_x_saison.csv",
+    "actor_facade":     "ctx_actor_top_x_facade.csv",
+    # Objets
+    "obj_saison":       "ctx_objet_x_saison.csv",
+    "obj_facade":       "ctx_objet_x_facade.csv",
+    # Carte
+    "carte_saison":     "ctx_carte_x_objet_x_saison.csv",
+    "carte_facade":     "ctx_carte_x_objet_x_facade.csv",
+    # Matrices PMI précalculées (déjà pivotées : label × saison/facade)
+    "pmi_act_saison":   "pmi_act_x_saison.csv",
+    "pmi_act_facade":   "pmi_act_x_facade.csv",
+    "pmi_imp_saison":   "pmi_imp_x_saison.csv",
+    "pmi_imp_facade":   "pmi_imp_x_facade.csv",
+    "pmi_actor_saison": "pmi_actor_x_saison.csv",
+    "pmi_actor_facade": "pmi_actor_x_facade.csv",
+    "pmi_obj_saison":   "pmi_objet_x_saison.csv",
+    "pmi_obj_facade":   "pmi_objet_x_facade.csv",
 }
 
 # Fichiers bruts des parcs
@@ -102,14 +102,14 @@ def load_umap_html(filename: str, token: str | None) -> str:
     return Path(hf_path).read_text(encoding="utf-8")
 
 
-# ── Global (agrégé) ───────────────────────────────────────────────────────────
+# ── Global (agrégé + PMI) ─────────────────────────────────────────────────────
 
 @st.cache_data(show_spinner=False, max_entries=1)
 def load_global(token: str | None) -> dict[str, pd.DataFrame]:
     """
-    Charge les fichiers agrégés du global depuis HF.
-    Retourne un dict avec les clés de GLOBAL_FILES.
-    Chaque DataFrame a les colonnes (label, objet, saison/facade, n_posts).
+    Charge tous les fichiers du global depuis HF.
+    Les clés pmi_* contiennent des matrices déjà pivotées
+    (label en index, saisons/facades en colonnes, valeurs PMI).
     """
     def safe(filename: str) -> pd.DataFrame:
         try:
@@ -124,10 +124,7 @@ def load_global(token: str | None) -> dict[str, pd.DataFrame]:
 
 @st.cache_data(show_spinner=False, max_entries=2)
 def load_zone(zone_slug: str, token: str | None) -> dict[str, pd.DataFrame]:
-    """
-    Charge les fichiers bruts allégés d'un parc depuis HF.
-    Retourne un dict avec les clés de PARC_FILES.
-    """
+    """Charge les fichiers bruts allégés d'un parc depuis HF."""
     def safe(filename: str) -> pd.DataFrame:
         try:
             return _hf_csv(f"data_precomputed/{zone_slug}/{filename}", token)
@@ -140,8 +137,8 @@ def load_zone(zone_slug: str, token: str | None) -> dict[str, pd.DataFrame]:
 # ── Stats locales (Git) ───────────────────────────────────────────────────────
 
 def load_stats(zone_slug: str) -> dict:
-    """Lit stats.json depuis data_precomputed/<zone_slug>/stats.json (Git)."""
-    path = PRECOMPUTED_DIR / zone_slug / "stats.json"
+    """Lit <zone_slug>.json depuis stat/ (Git) pour le header Streamlit."""
+    path = Path(__file__).parent.parent / "stat" / f"{zone_slug}.json"
     if path.exists():
         try:
             return json.loads(path.read_text(encoding="utf-8"))
