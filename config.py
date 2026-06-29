@@ -9,7 +9,7 @@ from pathlib import Path
 
 # ── Repo HuggingFace ──────────────────────────────────────────────────────────
 
-HF_REPO = "ImaneBayoub/future_obs_test"
+HF_REPO = "medialab-sciencespo/FutureObs"
 
 # ── Parcs naturels marins ─────────────────────────────────────────────────────
 

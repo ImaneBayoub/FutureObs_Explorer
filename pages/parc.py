@@ -138,7 +138,7 @@ def _tab_objets(ctx_f: dict) -> None:
                       plot_bgcolor=_BG, paper_bgcolor=_BG,
                       coloraxis_showscale=False,
                       yaxis=dict(autorange="reversed"), margin=_MARGIN)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
 
 # ── Onglet Activités ──────────────────────────────────────────────────────────
@@ -158,7 +158,7 @@ def _tab_activites(ctx_f: dict) -> None:
                       plot_bgcolor=_BG, paper_bgcolor=_BG,
                       coloraxis_showscale=False,
                       yaxis=dict(autorange="reversed"), margin=_MARGIN)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
 
 # ── Onglet Impacts ────────────────────────────────────────────────────────────
@@ -194,7 +194,7 @@ def _tab_impacts(ctx_f: dict) -> None:
                                              "négatif": "#DC143C",
                                              "neutre":  "#9e9e9e"})
         fig_pie.update_layout(height=220, margin=_MARGIN)
-        st.plotly_chart(fig_pie, use_container_width=True)
+        st.plotly_chart(fig_pie, width='stretch')
 
     c1, c2 = st.columns(2)
     with c1:
@@ -207,7 +207,7 @@ def _tab_impacts(ctx_f: dict) -> None:
                               plot_bgcolor=_BG, paper_bgcolor=_BG,
                               coloraxis_showscale=False,
                               yaxis=dict(autorange="reversed"), margin=_MARGIN)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
     with c2:
         st.markdown("**Positifs**")
         if not imp_pos.empty:
@@ -218,7 +218,7 @@ def _tab_impacts(ctx_f: dict) -> None:
                               plot_bgcolor=_BG, paper_bgcolor=_BG,
                               coloraxis_showscale=False,
                               yaxis=dict(autorange="reversed"), margin=_MARGIN)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
 
 # ── Onglet Acteurs ────────────────────────────────────────────────────────────
@@ -252,7 +252,7 @@ def _tab_acteurs(ctx_f: dict) -> None:
         fig.update_layout(height=520, plot_bgcolor=_BG, paper_bgcolor=_BG,
                           showlegend=False, yaxis=dict(autorange="reversed"),
                           margin=_MARGIN)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
     with c2:
         tc = pd.DataFrame([
             {"Type": "humain",     "Nb": len(actrs_hum)},
@@ -262,7 +262,7 @@ def _tab_acteurs(ctx_f: dict) -> None:
                       color_discrete_map=_TYPE_COLORS, hole=0.5,
                       title="Humain vs non-humain")
         fig2.update_layout(height=280, margin=dict(l=10, r=10, t=30, b=10))
-        st.plotly_chart(fig2, use_container_width=True)
+        st.plotly_chart(fig2, width='stretch')
 
 
 # ── Onglet Graph ──────────────────────────────────────────────────────────────
@@ -381,7 +381,7 @@ def _tab_graph(ctx_f: dict) -> None:
             yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
             margin=dict(l=0, r=0, t=10, b=0),
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
         st.caption("Activités · Impacts · Acteurs — taille ∝ fréquence")
 
     # Export GEXF
@@ -435,7 +435,7 @@ def _tab_export_csv(ctx_f: dict, zone_label: str) -> None:
         if df_preview.empty:
             continue
         with st.expander(f"**{label_name}** — {len(df_preview):,} lignes", expanded=False):
-            st.dataframe(df_preview.head(20), use_container_width=True, hide_index=True)
+            st.dataframe(df_preview.head(20), width='stretch', hide_index=True)
 
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:

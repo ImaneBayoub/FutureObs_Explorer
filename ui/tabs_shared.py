@@ -128,7 +128,7 @@ def tab_objets(ctx_objets: pd.DataFrame | None = None) -> None:
             yaxis=dict(autorange="reversed"),
             margin=_MARGIN,
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
     with c2:
         if not df_for_pmi.empty:
@@ -147,7 +147,7 @@ def tab_objets(ctx_objets: pd.DataFrame | None = None) -> None:
                     height=max(350, len(mat) * 22 + 80),
                     margin=_MARGIN,
                 )
-                st.plotly_chart(fig2, use_container_width=True)
+                st.plotly_chart(fig2, width='stretch')
 
 
 # ── Activités & Impacts ───────────────────────────────────────────────────────
@@ -208,7 +208,7 @@ def tab_act_imp(
                 yaxis=dict(autorange="reversed"),
                 margin=_MARGIN,
             )
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
         if not imps_all.empty:
             st.markdown("**Répartition des impacts**")
@@ -228,7 +228,7 @@ def tab_act_imp(
                 },
             )
             fig2.update_layout(height=220, margin=_MARGIN)
-            st.plotly_chart(fig2, use_container_width=True)
+            st.plotly_chart(fig2, width='stretch')
 
     # ── Colonne droite : impacts neg + pos ────────────────────────────────────
     with c2:
@@ -246,7 +246,7 @@ def tab_act_imp(
                 yaxis=dict(autorange="reversed"),
                 margin=_MARGIN,
             )
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
         st.markdown("**🟢 Impacts positifs**")
         if not imps_pos.empty and label_imp in imps_pos.columns:
@@ -262,7 +262,7 @@ def tab_act_imp(
                 yaxis=dict(autorange="reversed"),
                 margin=_MARGIN,
             )
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
 
 
@@ -314,7 +314,7 @@ def tab_acteurs(
             yaxis=dict(autorange="reversed"),
             margin=_MARGIN,
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
     with c2:
         tc = pd.DataFrame([
@@ -327,7 +327,7 @@ def tab_acteurs(
             hole=0.5, title="Humain vs non-humain",
         )
         fig2.update_layout(height=280, margin=dict(l=10, r=10, t=30, b=10))
-        st.plotly_chart(fig2, use_container_width=True)
+        st.plotly_chart(fig2, width='stretch')
 
 
 # ── PMI ───────────────────────────────────────────────────────────────────────
@@ -375,7 +375,7 @@ def tab_pmi(
             height=max(400, len(mat) * 18 + 80),
             margin=_MARGIN,
         )
-        st.plotly_chart(fig, use_container_width=True, key=tab_key)
+        st.plotly_chart(fig, width='stretch', key=tab_key)
 
     with sub_tabs[0]:
         _show_pmi(ctx_acts,    label_act,  f"pmi_act_{id(ctx_acts)}")
@@ -451,7 +451,7 @@ def tab_carte(
         margin=dict(l=0, r=0, t=0, b=0),
         showlegend=False,
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
     st.caption(
         f"Taille ∝ √(nb posts) · {len(agg)} lieux · "
         f"{int(agg['n_posts'].sum())} occurrences"
@@ -529,7 +529,7 @@ def tab_objets_agg(ctx_f: dict) -> None:
                       plot_bgcolor=_BG, paper_bgcolor=_BG,
                       coloraxis_showscale=False,
                       yaxis=dict(autorange="reversed"), margin=_MARGIN)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
 
 # ── Activités & Impacts (agrégé) ──────────────────────────────────────────────
@@ -570,7 +570,7 @@ def tab_act_imp_agg(ctx_f: dict) -> None:
                               plot_bgcolor=_BG, paper_bgcolor=_BG,
                               coloraxis_showscale=False,
                               yaxis=dict(autorange="reversed"), margin=_MARGIN)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
         if not imp_df.empty:
             st.markdown("**Répartition des impacts**")
@@ -587,7 +587,7 @@ def tab_act_imp_agg(ctx_f: dict) -> None:
                                                   "négatif": "#DC143C",
                                                   "neutre":  "#9e9e9e"})
                 fig2.update_layout(height=220, margin=_MARGIN)
-                st.plotly_chart(fig2, use_container_width=True)
+                st.plotly_chart(fig2, width='stretch')
 
     with c2:
         st.markdown("**Impacts négatifs**")
@@ -599,7 +599,7 @@ def tab_act_imp_agg(ctx_f: dict) -> None:
                               plot_bgcolor=_BG, paper_bgcolor=_BG,
                               coloraxis_showscale=False,
                               yaxis=dict(autorange="reversed"), margin=_MARGIN)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
         st.markdown("**Impacts positifs**")
         if not imps_pos.empty:
@@ -610,7 +610,7 @@ def tab_act_imp_agg(ctx_f: dict) -> None:
                               plot_bgcolor=_BG, paper_bgcolor=_BG,
                               coloraxis_showscale=False,
                               yaxis=dict(autorange="reversed"), margin=_MARGIN)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
 
 
@@ -644,7 +644,7 @@ def tab_acteurs_agg(ctx_f: dict) -> None:
         fig.update_layout(height=520, plot_bgcolor=_BG, paper_bgcolor=_BG,
                           showlegend=False, yaxis=dict(autorange="reversed"),
                           margin=_MARGIN)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
     with c2:
         tc = pd.DataFrame([
@@ -655,7 +655,7 @@ def tab_acteurs_agg(ctx_f: dict) -> None:
                       color_discrete_map=_TYPE_COLORS, hole=0.5,
                       title="Humain vs non-humain")
         fig2.update_layout(height=280, margin=dict(l=10, r=10, t=30, b=10))
-        st.plotly_chart(fig2, use_container_width=True)
+        st.plotly_chart(fig2, width='stretch')
 
 
 # ── PMI (agrégé) ──────────────────────────────────────────────────────────────
@@ -694,7 +694,7 @@ def tab_pmi_agg(ctx_f: dict) -> None:
                         color_continuous_scale="RdBu",
                         color_continuous_midpoint=0, zmin=-3, zmax=3)
         fig.update_layout(height=max(400, len(mat) * 18 + 80), margin=_MARGIN)
-        st.plotly_chart(fig, use_container_width=True, key=tab_key)
+        st.plotly_chart(fig, width='stretch', key=tab_key)
 
     with sub_tabs[0]:
         _show(ctx_f.get(f"pmi_act_{suffix}", pd.DataFrame()),
@@ -772,5 +772,5 @@ def tab_carte_agg(
                  zoom=5),
         height=580, margin=dict(l=0, r=0, t=0, b=0), showlegend=False,
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
     st.caption(f"Taille ∝ √(nb posts) · {len(agg)} lieux · {int(agg['n_posts'].sum())} occurrences")

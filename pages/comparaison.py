@@ -126,7 +126,7 @@ def _bar_chart(df_top: pd.DataFrame, color: str, n: int) -> None:
         yaxis=dict(autorange="reversed"),
         margin=_MARGIN,
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
 
 def _col_entity(label: str, df: pd.DataFrame, label_col: str,
@@ -247,7 +247,7 @@ def _tab_carte_compare(parcs_f: dict[str, dict]) -> None:
         mapbox_style="open-street-map",
         margin=dict(l=0, r=0, t=0, b=0),
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
 
 def _tab_pmi_compare(parcs_f: dict[str, dict]) -> None:
@@ -294,7 +294,7 @@ def _tab_pmi_compare(parcs_f: dict[str, dict]) -> None:
                 yaxis=dict(automargin=True),  # Agrandit la marge si les labels sont longs
                 xaxis=dict(automargin=True, tickangle=0)
             )
-            st.plotly_chart(fig1, use_container_width=True)
+            st.plotly_chart(fig1, width='stretch')
     else:
         st.info("Aucune donnée d'objet pour calculer cette PMI.")
 
@@ -342,7 +342,7 @@ def _tab_pmi_compare(parcs_f: dict[str, dict]) -> None:
                 yaxis=dict(automargin=True),
                 xaxis=dict(automargin=True, tickangle=0)
             )
-            st.plotly_chart(fig2, use_container_width=True)
+            st.plotly_chart(fig2, width='stretch')
     else:
         st.info("Aucune donnée de saison pour calculer cette PMI.")
 

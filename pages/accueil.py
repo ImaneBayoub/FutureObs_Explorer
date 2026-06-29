@@ -46,7 +46,7 @@ def page_accueil() -> None:
             unsafe_allow_html=True,
         )
         if st.button("→ Explorer le corpus global", key="btn_global",
-                     use_container_width=True):
+                     width='stretch'):
             st.session_state["page"] = "global"
             st.rerun()
 
@@ -67,7 +67,7 @@ def page_accueil() -> None:
             key="home_zone", label_visibility="collapsed",
         )
         if st.button("→ Explorer ce parc", key="btn_parc",
-                     use_container_width=True):
+                     width='stretch'):
             st.session_state["page"] = "parc"
             st.session_state["zone"] = zone_choice
             st.rerun()
@@ -85,6 +85,6 @@ def page_accueil() -> None:
             unsafe_allow_html=True,
         )
         if st.button("→ Comparer", key="btn_compare",
-                     use_container_width=True):
+                     width='stretch'):
             st.session_state["page"] = "compare"
             st.rerun()

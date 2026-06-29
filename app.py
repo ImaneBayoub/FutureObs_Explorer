@@ -22,7 +22,7 @@ from ui.sidebar        import render_nav
 
 st.set_page_config(
     page_title="FUTURE-Obs",
-    page_icon="🌊",
+    page_icon="",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -31,6 +31,7 @@ st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap');
 html, body, [class*="css"] { font-family: 'IBM Plex Sans', sans-serif; }
+[data-testid="stSidebarNav"] { display: none; }
 [data-testid="stSidebar"] { background: #0d1b2a; border-right: 1px solid #1e3a5f; }
 [data-testid="stSidebar"] * { color: #c8d8e8 !important; }
 [data-testid="stSidebar"] h1,
