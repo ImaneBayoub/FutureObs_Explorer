@@ -9,7 +9,6 @@ Fonctions de rendu du squelette visuel de l'app :
 """
 
 import streamlit as st
-import streamlit.components.v1 as components
 
 
 # ── Bandeau d'en-tête ─────────────────────────────────────────────────────────
@@ -76,7 +75,7 @@ def show_umap(html: str, key: str, caption: str = "") -> None:
             st.session_state["umap_fs_caption"] = caption
             st.rerun()
 
-    components.html(html, height=650, scrolling=False)
+    st.iframe(html, height=650)
 
     if caption:
         st.caption(caption)
@@ -99,8 +98,7 @@ def page_umap_fullscreen() -> None:
     if caption:
         st.caption(caption)
 
-    components.html(
+    st.iframe(
         st.session_state["umap_fs_html"],
         height=900,
-        scrolling=False,
     )

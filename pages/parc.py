@@ -37,71 +37,113 @@ _UMAP_PARC_PATHS: dict[str, str] = {
 }
 
 
+def _safe_concat(dfs: list[pd.DataFrame]) -> pd.DataFrame:
+    """pd.concat sécurisé : retourne un DataFrame vide si la liste est vide
+    ou ne contient aucun DataFrame non-vide."""
+    dfs = [df for df in dfs if df is not None and not df.empty]
+    if not dfs:
+        return pd.DataFrame()
+    return pd.concat(dfs, ignore_index=True)
+
+
 # ── Sidebar filtres ───────────────────────────────────────────────────────────
 
 def _render_sidebar(ctx: dict, parc_slug: str) -> dict:
-    """Affiche les 7 filtres et retourne un dict des sélections."""
+    """Affiche les 7 filtres et retourne un dict des sélections.
+
+    Les options proposées sont strictement limitées aux valeurs présentes
+    dans le corpus du parc chargé (ctx) — aucune valeur globale ou
+    provenant d'un autre parc n'est proposée.
+    """
     st.sidebar.markdown("---")
     st.sidebar.markdown("### Filtres")
 
     acts_all = ctx.get("activites", pd.DataFrame())
-    imps_all = pd.concat(
-        [df for k, df in ctx.items() if k.startswith("impacts_") and not df.empty],
-        ignore_index=True,
+    imps_all = _safe_concat(
+        [df for k, df in ctx.items() if k.startswith("impacts_")]
     )
-    actrs_all = pd.concat(
-        [df for k, df in ctx.items() if k.startswith("acteurs_") and not df.empty],
-        ignore_index=True,
+    actrs_all = _safe_concat(
+        [df for k, df in ctx.items() if k.startswith("acteurs_")]
     )
-    locs      = ctx.get("localisations", pd.DataFrame())
-    obj_df    = ctx.get("ctx_objets", pd.DataFrame())
+    locs   = ctx.get("localisations", pd.DataFrame())
+    obj_df = ctx.get("ctx_objets", pd.DataFrame())
 
-    def _opts(df, col) -> list[str]:
-        if df.empty or col not in df.columns:
+    def _opts(df: pd.DataFrame, col: str) -> list[str]:
+        """Retourne les valeurs uniques réellement présentes dans df[col],
+        castées en str, en minuscules, triées, sans NaN ni vides."""
+        if df is None or df.empty or col not in df.columns:
             return []
-        return sorted(df[col].dropna().str.lower().unique().tolist())
+        vals = (
+            df[col]
+            .dropna()
+            .astype(str)
+            .str.strip()
+            .str.lower()
+        )
+        vals = vals[vals != ""]
+        return sorted(vals.unique().tolist())
 
-    # Saison
+    # Saison — on ne propose que les saisons réellement présentes dans le corpus du parc
+    saison_cols = []
+    for df in (acts_all, imps_all, actrs_all):
+        if not df.empty and "saison" in df.columns:
+            saison_cols.append(df["saison"])
+    saisons_presentes = (
+        sorted(pd.concat(saison_cols).dropna().astype(str).str.lower().unique().tolist())
+        if saison_cols else []
+    )
+    saisons_opts = [s for s in SAISONS if s.lower() in saisons_presentes] if saisons_presentes else SAISONS
+
     sel_saisons = st.sidebar.multiselect(
-        "Saison", SAISONS, default=[], key=f"p_saison_{parc_slug}",
+        "Saison", saisons_opts, default=[], key=f"p_saison_{parc_slug}",
         placeholder="toutes",
     )
 
-    # Façade
+    # Façade — idem, restreint aux façades réellement présentes dans le corpus du parc
+    facade_cols = []
+    for df in (acts_all, imps_all, actrs_all, locs):
+        if not df.empty and "facade" in df.columns:
+            facade_cols.append(df["facade"])
+    facades_presentes = (
+        sorted(pd.concat(facade_cols).dropna().astype(str).str.lower().unique().tolist())
+        if facade_cols else []
+    )
+    facades_opts = [f for f in FACADES_VALIDES if f.lower() in facades_presentes] if facades_presentes else FACADES_VALIDES
+
     sel_facades = st.sidebar.multiselect(
-        "Façade", FACADES_VALIDES, default=[], key=f"p_facade_{parc_slug}",
+        "Façade", facades_opts, default=[], key=f"p_facade_{parc_slug}",
         placeholder="toutes",
     )
 
-    # Objet
+    # Objet — uniquement les objets présents dans ce parc
     obj_opts = _opts(obj_df, "objet")
     sel_objets = st.sidebar.multiselect(
         "Objet", obj_opts, default=[], key=f"p_objet_{parc_slug}",
         placeholder="tous",
     ) if obj_opts else []
 
-    # Activité
+    # Activité — uniquement les activités présentes dans ce parc
     act_opts = _opts(acts_all, "label_merged_act")
     sel_acts = st.sidebar.multiselect(
         "Activité", act_opts, default=[], key=f"p_act_{parc_slug}",
         placeholder="toutes",
     ) if act_opts else []
 
-    # Impact
+    # Impact — uniquement les impacts présents dans ce parc
     imp_opts = _opts(imps_all, "label_merged_imp")
     sel_imps = st.sidebar.multiselect(
         "Impact", imp_opts, default=[], key=f"p_imp_{parc_slug}",
         placeholder="tous",
     ) if imp_opts else []
 
-    # Acteur
+    # Acteur — uniquement les acteurs présents dans ce parc
     actr_opts = _opts(actrs_all, "label_merged_actor")
     sel_actrs = st.sidebar.multiselect(
         "Acteur", actr_opts, default=[], key=f"p_actr_{parc_slug}",
         placeholder="tous",
     ) if actr_opts else []
 
-    # Ville
+    # Ville — uniquement les villes présentes dans ce parc
     ville_col = "label" if not locs.empty and "label" in locs.columns else (
         "city" if not locs.empty and "city" in locs.columns else None
     )
@@ -169,10 +211,7 @@ def _tab_impacts(ctx_f: dict) -> None:
     imp_pos = ctx_f.get("impacts_pos",    pd.DataFrame())
     imp_neu = ctx_f.get("impacts_neutre", pd.DataFrame())
 
-    imps_all = pd.concat(
-        [df for df in [imp_neg, imp_pos, imp_neu] if not df.empty],
-        ignore_index=True,
-    )
+    imps_all = _safe_concat([imp_neg, imp_pos, imp_neu])
     if imps_all.empty:
         st.info("Aucune donnée d'impacts.")
         return
@@ -228,10 +267,7 @@ def _tab_acteurs(ctx_f: dict) -> None:
     actrs_hum = ctx_f.get("acteurs_humain",     pd.DataFrame())
     actrs_nh  = ctx_f.get("acteurs_non_humain", pd.DataFrame())
 
-    actrs_all = pd.concat(
-        [df for df in [actrs_hum, actrs_nh] if not df.empty],
-        ignore_index=True,
-    )
+    actrs_all = _safe_concat([actrs_hum, actrs_nh])
     if actrs_all.empty:
         st.info("Aucune donnée d'acteurs.")
         return
@@ -276,14 +312,8 @@ def _tab_graph(ctx_f: dict) -> None:
                          key="graph_min_freq")
 
     acts  = ctx_f.get("activites", pd.DataFrame())
-    imps  = pd.concat(
-        [df for k, df in ctx_f.items() if k.startswith("impacts_") and not df.empty],
-        ignore_index=True,
-    )
-    actrs = pd.concat(
-        [df for k, df in ctx_f.items() if k.startswith("acteurs_") and not df.empty],
-        ignore_index=True,
-    )
+    imps  = _safe_concat([df for k, df in ctx_f.items() if k.startswith("impacts_")])
+    actrs = _safe_concat([df for k, df in ctx_f.items() if k.startswith("acteurs_")])
 
     # Filtrage par fréquence
     acts  = filter_by_freq(acts,  "label_merged_act",   min_freq)
@@ -314,14 +344,14 @@ def _tab_graph(ctx_f: dict) -> None:
                 G.add_node(entity, type=type_node, weight=freq)
 
     # Arêtes via Activite_ID partagé
-    all_entities = pd.concat([
-        acts[["Activite_ID", "label_merged_act"]].rename(
-            columns={"label_merged_act": "entity"}) if not acts.empty and "Activite_ID" in acts.columns else pd.DataFrame(),
-        imps[["Activite_ID", "label_merged_imp"]].rename(
-            columns={"label_merged_imp": "entity"}) if not imps.empty and "Activite_ID" in imps.columns else pd.DataFrame(),
-        actrs[["Activite_ID", "label_merged_actor"]].rename(
-            columns={"label_merged_actor": "entity"}) if not actrs.empty and "Activite_ID" in actrs.columns else pd.DataFrame(),
-    ], ignore_index=True).dropna()
+    all_entities = _safe_concat([
+        acts[["Activite_ID", "label_merged_act"]].rename(columns={"label_merged_act": "entity"})
+            if not acts.empty and "Activite_ID" in acts.columns else pd.DataFrame(),
+        imps[["Activite_ID", "label_merged_imp"]].rename(columns={"label_merged_imp": "entity"})
+            if not imps.empty and "Activite_ID" in imps.columns else pd.DataFrame(),
+        actrs[["Activite_ID", "label_merged_actor"]].rename(columns={"label_merged_actor": "entity"})
+            if not actrs.empty and "Activite_ID" in actrs.columns else pd.DataFrame(),
+    ]).dropna()
 
     if not all_entities.empty:
         grouped = all_entities.groupby("Activite_ID")["entity"].apply(list)
@@ -486,23 +516,44 @@ def page_parc(zone_label: str, token: str) -> None:
     # Métriques pour le header (après filtrage)
     acts_df   = ctx_f.get("activites", pd.DataFrame())
     locs_df   = ctx_f.get("localisations", pd.DataFrame())
-    imps_all  = pd.concat(
-        [df for k, df in ctx_f.items() if k.startswith("impacts_") and not df.empty],
-        ignore_index=True,
+    imps_all  = _safe_concat(
+        [df for k, df in ctx_f.items() if k.startswith("impacts_")]
     )
-    actrs_all = pd.concat(
-        [df for k, df in ctx_f.items() if k.startswith("acteurs_") and not df.empty],
-        ignore_index=True,
+    actrs_all = _safe_concat(
+        [df for k, df in ctx_f.items() if k.startswith("acteurs_")]
     )
+
+    # Posts uniques réellement présents après filtrage
+    post_id_col = "Id_anonym"
+    post_sources = [acts_df, imps_all, actrs_all, locs_df]
+    post_id_series = [
+        df[post_id_col] for df in post_sources
+        if not df.empty and post_id_col in df.columns
+    ]
+    if post_id_series:
+        post_ids = pd.concat(post_id_series, ignore_index=True).dropna()
+        n_posts_filtre = post_ids.nunique()
+    else:
+        n_posts_filtre = stats.get("n_posts", 0)
+
+    def _n_unique(df: pd.DataFrame, col: str) -> int:
+        """Nombre d'entités uniques (label_merged_*) plutôt que de lignes."""
+        if df.empty or col not in df.columns:
+            return 0
+        return df[col].dropna().nunique()
+
+    n_activites = _n_unique(acts_df,  "label_merged_act")
+    n_impacts   = _n_unique(imps_all, "label_merged_imp")
+    n_acteurs   = _n_unique(actrs_all, "label_merged_actor")
 
     header(
         title=zone_label,
         subtitle="FUTURE-Obs · Parc naturel marin",
         stats={
-            "Posts":         stats.get("n_posts", 0),
-            "Activités":     len(acts_df),
-            "Impacts":       len(imps_all),
-            "Acteurs":       len(actrs_all),
+            "Posts":         n_posts_filtre,
+            "Activités":     n_activites,
+            "Impacts":       n_impacts,
+            "Acteurs":       n_acteurs,
             "Localisations": len(locs_df),
         },
     )

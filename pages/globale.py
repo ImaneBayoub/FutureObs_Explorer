@@ -85,13 +85,10 @@ def page_globale(token: str) -> None:
         title="Données globales",
         subtitle="FUTURE-Obs · Corpus littoral complet",
         stats={
-            "Posts":     stats.get("n_posts", 0),
-            "Activités": int(ctx_f["act_saison"]["n_posts"].sum())
-                         if not ctx_f["act_saison"].empty else 0,
-            "Impacts":   int(ctx_f["imp_saison"]["n_posts"].sum())
-                         if not ctx_f["imp_saison"].empty else 0,
-            "Acteurs":   int(ctx_f["actor_saison"]["n_posts"].sum())
-                         if not ctx_f["actor_saison"].empty else 0,
+            "Posts":         790518,
+            "Activités":     1194260,
+            "Impacts":       995578,
+            "Acteurs":       2052674,
         },
     )
 
